@@ -2,7 +2,7 @@ from multiprocessing.connection import wait
 import cv2
 import time
 import numpy as np
-from Structs import Pinout
+from Structs import Pinout, Resolutions
 import RPi.GPIO as GPIO
 
 
@@ -47,6 +47,10 @@ class Scanner:
         GPIO.setup(Pinout.DIR, GPIO.OUT)
         GPIO.setup(Pinout.STEP, GPIO.OUT)
         GPIO.output(Pinout.DIR, 1)
+
+    def set_resolution(resolution: Resolutions):
+        GPIO.setup(Pinout.MODE, GPIO.OUT)
+        GPIO.output(Pinout.MODE, resolution)
 
     def label(res):
         label = np.zeros(len(res))
