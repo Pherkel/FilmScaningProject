@@ -1,6 +1,7 @@
+from distutils.log import error
 from multiprocessing.connection import wait
 import cv2
-import time
+from time import sleep
 import numpy as np
 from Structs import Pinout, Resolutions
 import RPi.GPIO as GPIO
@@ -42,17 +43,22 @@ class Scanner:
     BadFrames = 0
     FrameMoves = 1
 
-    def init_pins():
-        GPIO.setmode(GPIO.BCM)
-        GPIO.setup(Pinout.DIR, GPIO.OUT)
-        GPIO.setup(Pinout.STEP, GPIO.OUT)
-        GPIO.output(Pinout.DIR, 1)
+    def init_pins() -> bool:
+        try:
+            GPIO.setmode(GPIO.BCM)
+            GPIO.setup(Pinout.DIR, GPIO.OUT)
+            GPIO.setup(Pinout.STEP, GPIO.OUT)
+            GPIO.output(Pinout.DIR, 1)
+        except:
+            return False
+        return True
 
-    def set_resolution(resolution: Resolutions):
+    def set_resolution(resolution: Resolutions) -> bool:
         GPIO.setup(Pinout.MODE, GPIO.OUT)
         GPIO.output(Pinout.MODE, resolution)
+        return True
 
-    def label(res):
+    def label(res) -> np.array:
         label = np.zeros(len(res))
         label[0] = 1
         for i in range(len(res)-1):
@@ -62,6 +68,11 @@ class Scanner:
                 label[i+1] = label[i]+1
         return label
 
-    def takeApicture(counter):
+    def takeApicture(self, counter: int) -> int:
         print("picture number: ", counter)
         counter = counter + 1
+        GPIO.output(Pinout.SHUTTER, GPIO.HIGH)
+        sleep(0.3)
+        GPIO.output(Pinout.SHUTTER, GPIO.LOW)
+        sleep(self.waitingTime)
+        return counter
