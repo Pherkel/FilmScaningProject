@@ -17,12 +17,22 @@ fn get_gaussian_kernel(sigma: f64) -> [[f64; 5]; 5] {
         }
     }
 
+    let mut sum: f64 = 0.0;
+
     for i in 0..out.len() {
         for j in 0..out.len() {
             out[i][j] = normal
                 * (-(kernel_coords[i][j].0.exp2() + (kernel_coords[i][j].1.exp2())) / 2.0
                     * sigma.exp2())
                 .exp();
+            sum += out[i][j];
+            
+        }
+    }
+
+    for e in out{
+        for mut e2 in e{
+            e2 /= sum;
         }
     }
 
@@ -32,9 +42,11 @@ fn get_gaussian_kernel(sigma: f64) -> [[f64; 5]; 5] {
 fn apply_gaussian_blur(pict: &GrayImage, kernel: &[[f64; 5]; 5]) -> GrayImage {
     let mut out: ImageBuffer<Luma<u8>, Vec<u8>> = GrayImage::new(pict.width(), pict.height());
 
-    for x in 0..pict.width() {
-        for y in 0..pict.height() {
+    for x in 2..pict.width()-2 {
+        for y in 2..pict.height()-2 {
+
             let mut weighted_avg: f64 = 0.0;
+            
             for x_kern in 0..5 {
                 for y_kern in 0..5 {
                     weighted_avg +=
@@ -48,7 +60,7 @@ fn apply_gaussian_blur(pict: &GrayImage, kernel: &[[f64; 5]; 5]) -> GrayImage {
     out
 }
 fn main() {
-    let img = Reader::open("/home/philipp/DEV/FilmScaningProject/canny_edges/Photo-1.jpeg")
+    let img = Reader::open("/config/FilmScaningProject/canny_edges/Photo-1.jpeg")
         .unwrap()
         .decode()
         .expect("Reading Image failed!");
@@ -60,6 +72,6 @@ fn main() {
     let blurred_img = apply_gaussian_blur(&img, &kernel);
 
     blurred_img
-        .save("/home/philipp/DEV/FilmScaningProject/canny_edges/Photo-1_blurred.jpeg")
+        .save("/config/FilmScaningProject/canny_edges/Photo-1_blurred.jpeg")
         .expect("failed to save")
 }
