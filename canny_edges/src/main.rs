@@ -1,48 +1,54 @@
 use image::io::Reader;
-use image::{DynamicImage, GrayImage};
+use image::{GrayImage, ImageBuffer, Luma, Pixel};
 use std::f64;
 
 fn get_gaussian_kernel(sigma: f64) -> [[f64; 5]; 5] {
+    let mut out: [[f64; 5]; 5] = [[0.0; 5]; 5];
+
     // calculating coefficient 1/(2 * sigma² * PI)
     let normal: f64 = 1.0 / (sigma.exp2() * f64::consts::PI * 2.0);
 
     // generating kernel with size 5
-    let mut kernel: [[f64; 5]; 5] = [[0.0; 5]; 5];
-    let mut sum: f64 = 0.0;
-    for i in 0..=5 {
-        for j in 0..=5 {
-            kernel[i + 2][j + 2] = normal
-                * (-(((i as f64) - 2.0).exp2() + ((i as f64) - 2.0).exp2()) / 2.0 * sigma.exp2());
-            sum += kernel[i][j]
+    let mut kernel_coords: [[(f64, f64); 5]; 5] = [[(0.0, 0.0); 5]; 5];
+
+    for x_kern in 0..kernel_coords.len() {
+        for y_kern in 0..kernel_coords.len() {
+            kernel_coords[x_kern][y_kern] = ((x_kern - 2) as f64, (y_kern - 2) as f64);
         }
     }
 
-    for row in kernel {
-        for mut col in row {
-            col /= sum;
+    for i in 0..out.len() {
+        for j in 0..out.len() {
+            out[i][j] = normal
+                * (-(kernel_coords[i][j].0.exp2() + (kernel_coords[i][j].1.exp2())) / 2.0
+                    * sigma.exp2())
+                .exp();
         }
     }
 
-    kernel
+    out
 }
 
-fn apply_gaussian_blur(pict: &GrayImage, kernel: &[[f64; 5]; 5]) {
-    let x_length = pict.dimensions().0;
-    let y_length = pict.dimensions().1;
+fn apply_gaussian_blur(pict: &GrayImage, kernel: &[[f64; 5]; 5]) -> GrayImage {
+    let mut out: ImageBuffer<Luma<u8>, Vec<u8>> = GrayImage::new(pict.width(), pict.height());
 
-    for x_pic in 2..x_length - 2 {
-        for y_pic in 2..y_length - 2 {
-
-            for x_kern in -2..=4 {
-                for y_kern in -2..=4 {
-                    pict(x_pic,y_pic) = pict[x_pic+x_kern][y_pic + y_kern]
+    for x in 0..pict.width() {
+        for y in 0..pict.height() {
+            let mut weighted_avg: f64 = 0.0;
+            for x_kern in 0..5 {
+                for y_kern in 0..5 {
+                    weighted_avg +=
+                        pict.get_pixel(x, y).channels()[0] as f64 * kernel[x_kern][y_kern];
+                }
             }
+            let weighted_avg = weighted_avg / 25.0;
+            out.put_pixel(x, y, image::Luma::<u8>([weighted_avg as u8]))
         }
     }
+    out
 }
-
 fn main() {
-    let img = Reader::open("../Photo-1.jpeg")
+    let img = Reader::open("/home/philipp/DEV/FilmScaningProject/canny_edges/Photo-1.jpeg")
         .unwrap()
         .decode()
         .expect("Reading Image failed!");
@@ -51,5 +57,9 @@ fn main() {
 
     let kernel = get_gaussian_kernel(1.0);
 
-    apply_gaussian_blur(&img, &kernel)
+    let blurred_img = apply_gaussian_blur(&img, &kernel);
+
+    blurred_img
+        .save("/home/philipp/DEV/FilmScaningProject/canny_edges/Photo-1_blurred.jpeg")
+        .expect("failed to save")
 }
