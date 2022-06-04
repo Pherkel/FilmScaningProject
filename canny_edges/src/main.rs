@@ -30,21 +30,24 @@ fn apply_gaussian_blur(pict: &GrayImage, kernel: &[[f64; 5]; 5]) {
     let x_length = pict.dimensions().0;
     let y_length = pict.dimensions().1;
 
-    for i in 1..x_length - 1 {
-        for j in 1..y_length - 1 {
-            //pict[i][j] =
+    for x_pic in 2..x_length - 2 {
+        for y_pic in 2..y_length - 2 {
+
+            for x_kern in -2..=4 {
+                for y_kern in -2..=4 {
+                    pict(x_pic,y_pic) = pict[x_pic+x_kern][y_pic + y_kern]
+            }
         }
     }
 }
 
 fn main() {
-    let mut img =
-        Reader::open("/home/philipp/IdeaProjects/FilmScaningProject/canny_edges/Photo-1.jpeg")
-            .unwrap()
-            .decode()
-            .expect("Reading Image failed!");
+    let img = Reader::open("../Photo-1.jpeg")
+        .unwrap()
+        .decode()
+        .expect("Reading Image failed!");
 
-    let img = img.as_luma8();
+    let img = img.into_luma8();
 
     let kernel = get_gaussian_kernel(1.0);
 
