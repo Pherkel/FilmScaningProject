@@ -6,10 +6,18 @@ import math
 
 
 class FrameDetector:
-    __slots__ = ("img", "edges", "lines", "segmented", "intersections")
+    __slots__ = ("img", "edges", "lines", "intersections")
 
     def __init__(self, image):
         self.img = image
+
+    def determine_lines(self):
+        self.edges = FrameDetector.detect_edges(self.img)
+        self.lines = FrameDetector.detect_lines(self.edges)
+
+    def determine_intersections(self):
+        segmented = FrameDetector._segment_by_angle_kmeans(self.lines)
+        self.intersections = FrameDetector._segmented_intersections(segmented)
 
     @staticmethod
     def detect_edges(img) -> bool:
@@ -25,15 +33,6 @@ class FrameDetector:
         try:
             lines = cv.HoughLines(edges, 1, np.pi / 180, 175, 0, 0)
             return lines
-        except Exception as err:
-            print(err)
-
-    @staticmethod
-    def segment_lines(lines):
-        try:
-            segmented = FrameDetector._segment_by_angle_kmeans(lines)
-            return segmented
-
         except Exception as err:
             print(err)
 
@@ -71,7 +70,7 @@ class FrameDetector:
         return segmented
 
     @staticmethod
-    def intersection(line1, line2):
+    def _intersection(line1, line2):
         """Finds the intersection of two lines given in Hesse normal form.
 
         Returns closest integer pixel locations.
@@ -89,7 +88,7 @@ class FrameDetector:
         return [[x0, y0]]
 
     @staticmethod
-    def segmented_intersections(lines):
+    def _segmented_intersections(lines):
         """Finds the intersections between groups of lines."""
 
         intersections = []
@@ -98,6 +97,6 @@ class FrameDetector:
                 for line1 in group:
                     for line2 in next_group:
                         intersections.append(
-                            FrameDetector.intersection(line1, line2))
+                            FrameDetector._intersection(line1, line2))
 
         return intersections
