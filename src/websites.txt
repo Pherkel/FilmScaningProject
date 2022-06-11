@@ -1,0 +1,9 @@
+https://stackoverflow.com/questions/46565975/find-intersection-point-of-two-lines-drawn-using-houghlines-opencv
+
+https://www.google.com/search?q=minimum+distance+between+two+points+algorithm&client=safari&rls=en&sxsrf=ALiCzsZPV7CPIT9qXs0nKa-cNguvRWIySA%3A1654895433632&ei=SbOjYtKPJp229u8P-NKtYA&oq=minimum+distance+between++algorithm&gs_lcp=Cgdnd3Mtd2l6EAMYADIGCAAQHhAHMgYIABAeEAg6BwgAEEcQsAM6BwgAELADEEM6BAgjECc6BQgAEIAEOggIABAeEA8QBToICAAQHhAHEAU6BggAEB4QBToICAAQHhAIEAdKBAhBGABKBAhGGABQ2wVYyRVgiR5oAXABeACAAcAEiAHeFJIBCzAuMy4zLjEuMS4xmAEAoAEByAEJwAEB&sclient=gws-wiz
+
+https://www.geeksforgeeks.org/closest-pair-of-points-using-divide-and-conquer-algorithm/
+
+https://dropbox.tech/machine-learning/fast-and-accurate-document-detection-for-scanning
+
+https://towardsdatascience.com/lines-detection-with-hough-transform-84020b3b1549

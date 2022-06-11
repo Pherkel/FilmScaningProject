@@ -1,32 +1,58 @@
-import cv2
-import time
 import numpy as np
+import time
+import math
+import cv2 as cv
+from matplotlib import pyplot as plt
+from FrameDetector import FrameDetector
 
-from Scanner import Scanner
+# read image
 
+img = cv.imread("/config/FilmScaningProject/src/Photo-1.jpeg",
+                cv.IMREAD_GRAYSCALE)
 
-# PIN Setup
+frame = FrameDetector(img)
 
+if not frame.detect_edges():
+    print("edge-detection failed!")
 
-# User input
-MaxPicutureNumber = 28
-# When no image border is located, 0 means it doesn't backup to take a picture, 1 for yes
-BackupPictureTake = 1
-waitingTime = 0.9  # 1 seconds after shuter is relesed, increase if pictures are blury
-colorNegative = 1    # 0 for Color positive, 1 for All Negative films
-framelength = 111  # 111 for landscape 35mm, increase if progression falls shor
+if not frame.detect_lines():
+    print("line-detection failed!")
 
-# Intrinsic values
-HowManyFramesPerImage = 1    # Not yet developed
-OverlapValue = 0.5  # Not yet developed
-BorderExpectation = 10   # initial move is (x-1)/x th of the frame, 10 is ideal
-CorrectionSpeed = framelength*16  # resolution of a 1/16 micro stepper per frame
-CorrectionSpeedP = 832  # Portrait length, 1/16
-framelengthP = 52   # Portrait length , 1/1
-orientation = 0    # 0 for landscape 1 for portrait
-Cropfactor = 0.2  # max 1 min 0, ideal 0.2
-# border intensity is found needs to be 95% higher from the rest.
-threshold = 0.95
+if not frame.segment_lines():
+    print("line-segmentation failed!")
 
+if not frame.calculate_intersections():
+    print("calculating intersections failed!")
 
-scanner = Scanner(0.9, 36)
+cdst = cv.cvtColor(frame.edges, cv.COLOR_GRAY2BGR)
+
+# TODO: merge intersections within a specific distance of each other
+# (do I really need to do this?)
+
+# TODO: construct rectangle from given points:
+# - probably 4 points?
+# - aspect ratio should match 3:2
+# - mostly 90° angles
+
+# TODO: find center of detected rectangle
+
+# TODO: estimate sizes with sprocket holes
+# enables precise movement instructions to motor
+
+if frame.lines is not None:
+    for i in range(0, len(frame.lines)):
+        rho = frame.lines[i][0][0]
+        theta = frame.lines[i][0][1]
+        a = math.cos(theta)
+        b = math.sin(theta)
+        x0 = a * rho
+        y0 = b * rho
+        pt1 = (int(x0 + 10000*(-b)), int(y0 + 10000*(a)))
+        pt2 = (int(x0 - 10000*(-b)), int(y0 - 10000*(a)))
+        cv.line(cdst, pt1, pt2, (0, 0, 255), 3, cv.LINE_AA)
+
+for i in range(0, len(frame.intersections)):
+    cv.circle(cdst, frame.intersections[i][0], radius=0,
+              color=(0, 255, 0), thickness=10)
+
+cv.imwrite("lines.png", cdst)

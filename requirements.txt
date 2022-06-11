@@ -1,5 +1,4 @@
 autopep8
 opencv-python  
 numpy
-pyfirmata
-scipy
+matplotlib
