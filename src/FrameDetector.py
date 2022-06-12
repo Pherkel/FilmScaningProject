@@ -132,6 +132,37 @@ class FrameDetector:
         return not (pos or neg)
 
     @staticmethod
+    def _aspect_ratio(rect) -> float:
+        top = FrameDetector._vec_from_points(rect[0], rect[1])
+        left = FrameDetector._vec_from_points(rect[0], rect[2])
+        bottom = FrameDetector._vec_from_points(rect[2], rect[3])
+        right = FrameDetector._vec_from_points(rect[1], rect[3])
+
+        height = 0.5 * (FrameDetector._vec_sq_length(right) + FrameDetector._vec_sq_length(left))
+        length = 0.5 * (FrameDetector._vec_sq_length(top) + FrameDetector._vec_sq_length(bottom))
+
+        return abs(math.pow((2 / 3), 2) - (length / height))
+
+    @staticmethod
+    def _angle_checker(rect) -> float:
+        top = FrameDetector._vec_from_points(rect[0], rect[1])
+        left = FrameDetector._vec_from_points(rect[0], rect[2])
+        bottom = FrameDetector._vec_from_points(rect[2], rect[3])
+        right = FrameDetector._vec_from_points(rect[1], rect[3])
+
+        angle1 = FrameDetector._vec_angle_fast(left, top)
+        angle2 = FrameDetector._vec_angle_fast(top, right)
+        angle3 = FrameDetector._vec_angle_fast(right, bottom)
+        angle4 = FrameDetector._vec_angle_fast(bottom, left)
+
+        m1 = abs(1 - angle1) if angle1 < 2 else abs(3 - angle1)
+        m2 = abs(1 - angle2) if angle2 < 2 else abs(3 - angle2)
+        m3 = abs(1 - angle3) if angle3 < 2 else abs(3 - angle3)
+        m4 = abs(1 - angle4) if angle4 < 2 else abs(3 - angle4)
+
+        return m1 + m2 + m3 + m4
+
+    @staticmethod
     def _form_rectangle(intersections):
         out = []
 
@@ -155,46 +186,14 @@ class FrameDetector:
 
                         rect = [point1, point2, point3, point4]
 
-                        rect = sorted(rect, key=lambda x: (-x[0], x[1]))
-
-                        top = FrameDetector._vec_from_points(rect[0], rect[1])
-                        left = FrameDetector._vec_from_points(rect[0], rect[2])
-                        bottom = FrameDetector._vec_from_points(rect[2], rect[3])
-                        right = FrameDetector._vec_from_points(rect[1], rect[3])
-
-                        height = 0.5 * (FrameDetector._vec_sq_length(right) + FrameDetector._vec_sq_length(left))
-                        length = 0.5 * (FrameDetector._vec_sq_length(top) + FrameDetector._vec_sq_length(bottom))
-
-                        #if abs(math.pow((2 / 3), 2) - (length / height)) > 0.2: continue
-
-                        angle1 = FrameDetector._vec_angle_fast(left, top)
-                        angle2 = FrameDetector._vec_angle_fast(top, right)
-                        angle3 = FrameDetector._vec_angle_fast(right, bottom)
-                        angle4 = FrameDetector._vec_angle_fast(bottom, left)
-
-                        if FrameDetector._angle_threshold(angle1) or FrameDetector._angle_threshold(
-                                angle2) or FrameDetector._angle_threshold(angle3) or FrameDetector._angle_threshold(
-                                    angle4):
-                            continue
+                        rect = sorted(rect, key=lambda x: (x[0], x[1]))
 
                         out.append(rect)
-
         return out
 
     @staticmethod
-    def _rate_rectangle(rectangle) -> int:
-
-        top = FrameDetector._vec_from_points(rectangle[0], rectangle[1])
-        right = FrameDetector._vec_from_points(rectangle[0], rectangle[2])
-        bottom = FrameDetector._vec_from_points(rectangle[2], rectangle[3])
-        left = FrameDetector._vec_from_points(rectangle[1], rectangle[3])
-
-        height = 0.5 * (FrameDetector._vec_sq_length(right) + FrameDetector._vec_sq_length(left))
-        length = 0.5 * (FrameDetector._vec_sq_length(top) + FrameDetector._vec_sq_length(bottom))
-
-        aspect_r = length / height
-
-        return abs(math.pow((2 / 3), 2) - aspect_r)
+    def _rate_rectangle(rect) -> float:
+        return 0.5 * (FrameDetector._aspect_ratio(rect) + FrameDetector._angle_checker(rect))
 
     def determine_rectangle(self):
         # outline
