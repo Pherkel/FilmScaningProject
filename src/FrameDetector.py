@@ -102,6 +102,10 @@ class FrameDetector:
         return intersections
 
     @staticmethod
+    def _vec_from_points(p1, p2):
+        return [p1[0] - p2[0], p1[1] - p2[1]]
+
+    @staticmethod
     def _vec_length(vec):
         return np.sqrt(vec[0]*vec[0] + vec[1] * vec[1])
 
@@ -166,7 +170,17 @@ class FrameDetector:
 
     @ staticmethod
     def _rate_rectangle(rectangle) -> int:
-        ...
+
+        length = [rectangle[0][0] - rectangle[1]
+                  [0], rectangle[1][0] - rectangle[1][1]]
+
+        height = [rectangle[0][0] - rectangle[2]
+                  [0], rectangle[0][1] - rectangle[2][1]]
+
+        aspect_r = FrameDetector._vec_length(
+            length) / FrameDetector._vec_length(height)
+
+        return abs(1.5 - aspect_r)
 
     def determine_rectangle(self):
         # outline
@@ -178,7 +192,7 @@ class FrameDetector:
         # 6. do for all points
 
         checked = []
-        best_rating = 0
+        best_rating = 1000
         best_rect = (0, 0, 0, 0)
 
         for point in self.intersections:
@@ -189,11 +203,11 @@ class FrameDetector:
                 continue
 
             checked.append(rect)
-            """
+
             rating = FrameDetector._rate_rectangle(rect)
 
-            if rating > best_rating:
-                best_rating = rating"""
-            best_rect = rect
+            if rating < best_rating:
+                best_rating = rating
+                best_rect = rect
 
         self.rectangle = best_rect
