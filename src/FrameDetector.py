@@ -6,10 +6,11 @@ import math
 
 
 class FrameDetector:
-    __slots__ = ("img", "edges", "lines", "intersections", "rectangle")
+    __slots__ = ("img", "edges", "lines", "intersections", "rectangle", "rectangles")
 
     def __init__(self, image):
         self.img = image
+        self.rectangles = []
 
     def determine_lines(self):
         self.edges = FrameDetector.detect_edges(self.img)
@@ -53,7 +54,7 @@ class FrameDetector:
         # returns angles in [0, pi] in radians
         angles = np.array([line[0][1] for line in lines])
         # multiply the angles by two and find coordinates of that angle
-        pts = np.array([[np.cos(2*angle), np.sin(2*angle)]
+        pts = np.array([[np.cos(2 * angle), np.sin(2 * angle)]
                         for angle in angles], dtype=np.float32)
 
         # run kmeans on the coords
@@ -93,7 +94,7 @@ class FrameDetector:
 
         intersections = []
         for i, group in enumerate(lines[:-1]):
-            for next_group in lines[i+1:]:
+            for next_group in lines[i + 1:]:
                 for line1 in group:
                     for line2 in next_group:
                         intersections.append(
@@ -107,80 +108,94 @@ class FrameDetector:
 
     @staticmethod
     def _vec_length(vec):
-        return np.sqrt(vec[0]*vec[0] + vec[1] * vec[1])
+        return math.sqrt(math.pow(vec[0], 2) + math.pow(vec[1], 2))
 
     @staticmethod
-    def _vec_angle(vec1, vec2):
-        return np.arccos(
-            (vec1[0] * vec1[1] + vec2[0] * vec2[1]) /
-            (FrameDetector._vec_length(vec1) * FrameDetector._vec_length(vec2)))
+    def _vec_sq_length(vec):
+        return math.pow(vec[0], 2) + math.pow(vec[1], 2)
 
     @staticmethod
-    def _form_rectangle(intersections, point1):
+    def _vec_angle_fast(vec1, vec2):
+        vec = FrameDetector._vec_from_points(vec1, vec2)
 
-        for point2 in intersections:
-            for point3 in intersections:
-                for point4 in intersections:
-                    rect = [point1, point2, point3, point4]
+        if vec[1] >= 0:
+            if vec[0] >= 0:
+                return vec[1] / (vec[0] + vec[1])
+            else:
+                return 1 - vec[0] / (-vec[0] + vec[1])
+        else:
+            if vec[0] < 0:
+                return 2 - vec[1] / (-vec[1] - vec[0])
+            else:
+                return 3 + vec[0] / (vec[0] - vec[1])
 
-                    if point2 is point1:
-                        continue
+    @staticmethod
+    def _angle_threshold(angle, lower=0.8, upper=1.2):
+        pos = angle >= lower or angle <= upper
+        neg = angle >= lower+2 or angle <= upper+2
+        return not(pos or neg)
 
-                    if point3 is point1:
-                        continue
+    @staticmethod
+    def _form_rectangle(intersections):
+        out = []
 
-                    if point4 is point1:
-                        continue
+        for point1 in intersections:
+            for point2 in intersections:
+                for point3 in intersections:
+                    for point4 in intersections:
 
-                    if point2 is point3:
-                        continue
-                    if point2 is point4:
-                        continue
-                    if point3 is point4:
-                        continue
+                        if point1 is point2:
+                            continue
+                        if point1 is point3:
+                            continue
+                        if point1 is point4:
+                            continue
+                        if point2 is point3:
+                            continue
+                        if point2 is point4:
+                            continue
+                        if point3 is point4:
+                            continue
 
-                    rect.sort(key=lambda x: (x[0], x[1]))
+                        rect = [point1, point2, point3, point4]
 
-                    p1_p2 = [point1[0] - point2[0], point1[1] - point2[1]]
-                    p2_p3 = [point2[0] - point3[0], point2[1] - point3[1]]
-                    p3_p4 = [point3[0] - point4[0], point3[1] - point4[1]]
-                    p4_p1 = [point4[0] - point1[0], point4[1] - point1[1]]
+                        rect.sort(key=lambda x: (x[0], x[1]))
+                        if rect in out: continue
+                        if FrameDetector._rate_rectangle(rect) > 0.2: continue
 
-                    angle1 = FrameDetector._vec_angle(p1_p2, p2_p3)
+                        p1_p2 = FrameDetector._vec_from_points(point1, point2)
+                        p2_p3 = FrameDetector._vec_from_points(point2, point3)
+                        p3_p4 = FrameDetector._vec_from_points(point3, point4)
+                        p4_p1 = FrameDetector._vec_from_points(point4, point1)
 
-                    if angle1 < 1.45 or angle1 > 1.65:
-                        return None
+                        angle1 = FrameDetector._vec_angle_fast(p1_p2, p2_p3)
+                        angle2 = FrameDetector._vec_angle_fast(p2_p3, p3_p4)
+                        angle3 = FrameDetector._vec_angle_fast(p3_p4, p4_p1)
+                        angle4 = FrameDetector._vec_angle_fast(p4_p1, p1_p2)
 
-                    angle2 = FrameDetector._vec_angle(p2_p3, p3_p4)
+                        if FrameDetector._angle_threshold(angle1) or FrameDetector._angle_threshold(
+                                angle2) or FrameDetector._angle_threshold(angle3) or FrameDetector._angle_threshold(
+                            angle4):
+                                continue
 
-                    if angle2 < 1.45 or angle1 > 1.65:
-                        return None
+                        out.append(rect)
 
-                    angle3 = FrameDetector._vec_angle(p3_p4, p4_p1)
+        return out
 
-                    if angle3 < 1.45 or angle1 > 1.65:
-                        return None
-
-                    angle4 = FrameDetector._vec_angle(p4_p1, p1_p2)
-
-                    if angle4 < 1.45 or angle1 > 1.65:
-                        return None
-
-                    return rect
-
-    @ staticmethod
+    @staticmethod
     def _rate_rectangle(rectangle) -> int:
 
-        length = [rectangle[0][0] - rectangle[1]
-                  [0], rectangle[1][0] - rectangle[1][1]]
+        top = FrameDetector._vec_from_points(rectangle[0], rectangle[1])
+        right = FrameDetector._vec_from_points(rectangle[0], rectangle[2])
+        bottom = FrameDetector._vec_from_points(rectangle[2], rectangle[3])
+        left = FrameDetector._vec_from_points(rectangle[1], rectangle[3])
 
-        height = [rectangle[0][0] - rectangle[2]
-                  [0], rectangle[0][1] - rectangle[2][1]]
+        height = 0.5 * (FrameDetector._vec_sq_length(right) + FrameDetector._vec_sq_length(left))
+        length = 0.5 * (FrameDetector._vec_sq_length(top) + FrameDetector._vec_sq_length(bottom))
 
-        aspect_r = FrameDetector._vec_length(
-            length) / FrameDetector._vec_length(height)
+        aspect_r = length / height
 
-        return abs(1.5 - aspect_r)
+        return abs(math.pow((2/3), 2) - aspect_r)
 
     def determine_rectangle(self):
         # outline
@@ -191,23 +206,19 @@ class FrameDetector:
         # 5. save the combination of points for this rectangle
         # 6. do for all points
 
-        checked = []
         best_rating = 1000
         best_rect = (0, 0, 0, 0)
 
-        for point in self.intersections:
-            rect = FrameDetector._form_rectangle(
-                self.intersections, point)
+        rects = FrameDetector._form_rectangle(self.intersections)
 
-            if rect in checked or rect is None:
-                continue
-
-            checked.append(rect)
+        for rect in rects:
 
             rating = FrameDetector._rate_rectangle(rect)
 
             if rating < best_rating:
                 best_rating = rating
                 best_rect = rect
+                print(rating)
+                self.rectangles.append(rect)
 
         self.rectangle = best_rect
