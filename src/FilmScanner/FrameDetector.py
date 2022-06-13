@@ -136,19 +136,19 @@ class FrameDetector:
         top = FrameDetector._vec_from_points(rect[0], rect[1])
         left = FrameDetector._vec_from_points(rect[0], rect[2])
         bottom = FrameDetector._vec_from_points(rect[2], rect[3])
-        right = FrameDetector._vec_from_points(rect[1], rect[3])
+        right = FrameDetector._vec_from_points(rect[1], rect[2])
 
-        height = 0.5 * (FrameDetector._vec_sq_length(right) + FrameDetector._vec_sq_length(left))
-        length = 0.5 * (FrameDetector._vec_sq_length(top) + FrameDetector._vec_sq_length(bottom))
+        height = FrameDetector._vec_sq_length(right)
+        length = FrameDetector._vec_sq_length(top)
 
-        return abs((2/3) - (length / height))
+        return length / height
 
     @staticmethod
-    def _angle_checker(rect) -> float:
+    def _angles(rect) -> float:
         top = FrameDetector._vec_from_points(rect[0], rect[1])
         left = FrameDetector._vec_from_points(rect[0], rect[2])
         bottom = FrameDetector._vec_from_points(rect[2], rect[3])
-        right = FrameDetector._vec_from_points(rect[1], rect[3])
+        right = FrameDetector._vec_from_points(rect[1], rect[2])
 
         angle1 = FrameDetector._vec_angle_fast(left, top)
         angle2 = FrameDetector._vec_angle_fast(top, right)
@@ -193,7 +193,7 @@ class FrameDetector:
 
     @staticmethod
     def _rate_rectangle(rect) -> float:
-        return FrameDetector._aspect_ratio(rect) + FrameDetector._angle_checker(rect)
+        return FrameDetector._aspect_ratio(rect) + FrameDetector._angles(rect)
 
     def determine_rectangle(self):
         # outline

@@ -1,6 +1,8 @@
 import numpy as np
 import cv2 as cv
-from src.FilmScanner.FrameDetector import FrameDetector
+import cProfile
+import pstats
+from FilmScanner.FrameDetector import FrameDetector
 
 img = cv.imread('Photo-1.jpeg',
                 cv.IMREAD_GRAYSCALE)
@@ -11,11 +13,9 @@ frame.determine_lines()
 frame.determine_intersections()
 # TODO: make this function tons faster (k-d tree)
 
-import cProfile
-import pstats
 
 with cProfile.Profile() as pr:
- ...
+    ...
 frame.determine_rectangle()
 
 stats = pstats.Stats(pr)
@@ -43,9 +43,8 @@ for i in range(0, len(frame.lines)):
     cv.line(cdst, pt1, pt2, (0, 0, 255), 3, cv.LINE_AA)
 """
 for i in range(0, len(frame.intersections)):
-  cv.circle(cdst, frame.intersections[i], radius=0,
-           color=(0, 255, 0), thickness=10)
-
+    cv.circle(cdst, frame.intersections[i], radius=0,
+              color=(0, 255, 0), thickness=10)
 
 for rect in frame.rectangles:
     rect_coords = np.array(rect, np.int32)
