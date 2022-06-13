@@ -112,18 +112,14 @@ class FrameDetector:
 
     @staticmethod
     def _vec_angle_fast(vec1, vec2):
-        vec = FrameDetector._vec_from_points(vec1, vec2)
+        x = np.dot(vec1, vec2)
+        y = np.cross(vec1, vec2)
+        #vec = FrameDetector._vec_from_points(vec1, vec2)
 
-        if vec[1] >= 0:
-            if vec[0] >= 0:
-                return vec[1] / (vec[0] + vec[1])
-            else:
-                return 1 - vec[0] / (-vec[0] + vec[1])
+        if y >= 0:
+            return y / (x + y) if x >= 0 else 1 - x / (-x + y)
         else:
-            if vec[0] < 0:
-                return 2 - vec[1] / (-vec[1] - vec[0])
-            else:
-                return 3 + vec[0] / (vec[0] - vec[1])
+            return 2 - y / (-x - y) if x < 0 else 3 + x / (x - y)
 
     @staticmethod
     def _angle_threshold(angle, lower=0.5, upper=1.5):
@@ -145,12 +141,13 @@ class FrameDetector:
 
     @staticmethod
     def _angles(rect) -> float:
+
         top = FrameDetector._vec_from_points(rect[0], rect[1])
         left = FrameDetector._vec_from_points(rect[0], rect[2])
         bottom = FrameDetector._vec_from_points(rect[2], rect[3])
         right = FrameDetector._vec_from_points(rect[1], rect[2])
 
-        angle1 = FrameDetector._vec_angle_fast(left, top)
+        angle1 = FrameDetector._vec_angle_fast(top, left)
         angle2 = FrameDetector._vec_angle_fast(top, right)
         angle3 = FrameDetector._vec_angle_fast(right, bottom)
         angle4 = FrameDetector._vec_angle_fast(bottom, left)
