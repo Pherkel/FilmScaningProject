@@ -3,3 +3,4 @@ tempCodeRunnerFile.ipynb
 *__pycache__*
 *target/
 *.png
+*.prof

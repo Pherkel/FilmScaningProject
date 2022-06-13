@@ -1,14 +1,9 @@
-from cmath import pi
-from distutils.log import error
-from multiprocessing.connection import wait
-from tkinter import Frame
-from turtle import right, window_height
+rom turtle import right
 import cv2
 from time import sleep
 import numpy as np
-from Structs import Pinout, Resolutions
 import RPi.GPIO as GPIO
-from main import BorderExpectation, Cropfactor
+from src.FilmScanner.main import BorderExpectation
 from scipy.stats import rankdata
 
 

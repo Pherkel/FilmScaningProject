@@ -1,16 +1,16 @@
 import cv2 as cv
 from collections import defaultdict
 import numpy as np
-from matplotlib import pyplot as plt
 import math
 
 
 class FrameDetector:
-    __slots__ = ("img", "edges", "lines", "intersections", "rectangle", "rectangles")
+    __slots__ = ("img", "edges", "lines", "intersections", "rectangle", "rectangles", "temp_rects")
 
     def __init__(self, image):
         self.img = image
         self.rectangles = []
+        self.temp_rects = []
 
     def determine_lines(self):
         self.edges = FrameDetector.detect_edges(self.img)
@@ -141,7 +141,7 @@ class FrameDetector:
         height = 0.5 * (FrameDetector._vec_sq_length(right) + FrameDetector._vec_sq_length(left))
         length = 0.5 * (FrameDetector._vec_sq_length(top) + FrameDetector._vec_sq_length(bottom))
 
-        return abs(math.pow((2 / 3), 2) - (length / height))
+        return abs((2/3) - (length / height))
 
     @staticmethod
     def _angle_checker(rect) -> float:
@@ -155,12 +155,12 @@ class FrameDetector:
         angle3 = FrameDetector._vec_angle_fast(right, bottom)
         angle4 = FrameDetector._vec_angle_fast(bottom, left)
 
-        m1 = abs(1 - angle1) if angle1 < 2 else abs(3 - angle1)
-        m2 = abs(1 - angle2) if angle2 < 2 else abs(3 - angle2)
-        m3 = abs(1 - angle3) if angle3 < 2 else abs(3 - angle3)
-        m4 = abs(1 - angle4) if angle4 < 2 else abs(3 - angle4)
+        m1 = abs(1 - angle1) if angle1 <= 2 else abs(3 - angle1)
+        m2 = abs(1 - angle2) if angle2 <= 2 else abs(3 - angle2)
+        m3 = abs(1 - angle3) if angle3 <= 2 else abs(3 - angle3)
+        m4 = abs(1 - angle4) if angle4 <= 2 else abs(3 - angle4)
 
-        return m1 + m2 + m3 + m4
+        return (m1 + m2 + m3 + m4) / 4
 
     @staticmethod
     def _form_rectangle(intersections):
@@ -193,7 +193,7 @@ class FrameDetector:
 
     @staticmethod
     def _rate_rectangle(rect) -> float:
-        return 0.5 * (FrameDetector._aspect_ratio(rect) + FrameDetector._angle_checker(rect))
+        return FrameDetector._aspect_ratio(rect) + FrameDetector._angle_checker(rect)
 
     def determine_rectangle(self):
         # outline
@@ -204,11 +204,10 @@ class FrameDetector:
         # 5. save the combination of points for this rectangle
         # 6. do for all points
 
-        best_rating = 1000
+        best_rating = 10
         best_rect = (0, 0, 0, 0)
 
         rects = FrameDetector._form_rectangle(self.intersections)
-
         for rect in rects:
 
             rating = FrameDetector._rate_rectangle(rect)

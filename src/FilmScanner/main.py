@@ -1,7 +1,6 @@
 import numpy as np
 import cv2 as cv
-import time
-from FrameDetector import FrameDetector
+from src.FilmScanner.FrameDetector import FrameDetector
 
 img = cv.imread('Photo-1.jpeg',
                 cv.IMREAD_GRAYSCALE)
@@ -12,17 +11,24 @@ frame.determine_lines()
 frame.determine_intersections()
 # TODO: make this function tons faster (k-d tree)
 
+import cProfile
+import pstats
+
+with cProfile.Profile() as pr:
+ ...
 frame.determine_rectangle()
+
+stats = pstats.Stats(pr)
+stats.sort_stats(pstats.SortKey.TIME)
+stats.dump_stats(filename="../../misc/rectangle_stats.prof")
 
 cdst = cv.cvtColor(frame.edges, cv.COLOR_GRAY2BGR)
 
 # TODO: find center of detected rectangle
 
 # TODO: merge intersections within a specific distance of each other
-# (do I really need to do this?)
 
 # TODO: estimate sizes with sprocket holes
-# enables precise movement instructions to motor
 
 """
 for i in range(0, len(frame.lines)):
@@ -44,7 +50,7 @@ for i in range(0, len(frame.intersections)):
 for rect in frame.rectangles:
     rect_coords = np.array(rect, np.int32)
     rect_coords = rect_coords.reshape((-1, 1, 2))
-    cv.polylines(cdst, [rect_coords], True, (255, 0, 255), 5)
+    cv.polylines(cdst, [rect_coords], True, (255, 0, 255), 2)
 
 rect_coords = np.array(frame.rectangle, np.int32)
 rect_coords = rect_coords.reshape((-1, 1, 2))
