@@ -125,9 +125,9 @@ class FrameDetector:
 
     @staticmethod
     def _vec_angle_fast(vec1, vec2):
-        x = (vec1[0]*vec2[0]) + (vec1[1]*vec2[1]) # dot
-        #x = np.dot(vec1, vec2)
-        y = vec1[0]*vec2[1]-vec1[1]*vec2[0] # cross product
+        x = (vec1[0] * vec2[0]) + (vec1[1] * vec2[1])  # dot
+        # x = np.dot(vec1, vec2)
+        y = vec1[0] * vec2[1] - vec1[1] * vec2[0]  # cross product
         if y >= 0:
             return y / (x + y) if x >= 0 else 1 - x / (-x + y)
         else:
@@ -172,6 +172,7 @@ class FrameDetector:
 
     @staticmethod
     def _form_rectangle(intersections):
+        # TODO: make this run faster (k-D-tree)
         out = []
 
         for point1 in intersections:
