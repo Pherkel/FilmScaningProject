@@ -1,8 +1,8 @@
 import cv2
-from collections import defaultdict
 import numpy as np
 import math
-
+from collections import defaultdict
+from FilmScanner.kdtree import kdtree
 
 class FrameDetector:
     __slots__ = ("img", "edges", "lines", "intersections", "rectangle")
@@ -172,7 +172,6 @@ class FrameDetector:
 
     @staticmethod
     def _form_rectangle(intersections):
-        # TODO: make this run faster (k-D-tree)
         out = []
 
         for point1 in intersections:
@@ -199,6 +198,19 @@ class FrameDetector:
 
                         out.append(rect)
         return out
+
+    def merge_points(self, thresh=math.pow(10, 2)):
+        tree = kdtree(self.intersections, 3)
+        print(tree.tree)
+        for point in self.intersections:
+            neighbor = tree.find_nn(tree.tree, point)
+
+            if kdtree._sed(point, neighbor) < thresh:
+                try:
+                    self.intersections.remove(neighbor)
+                except ValueError as err:
+                    print(err)
+
 
     @staticmethod
     def _rate_rectangle(rect) -> float:

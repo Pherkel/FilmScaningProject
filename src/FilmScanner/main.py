@@ -1,8 +1,9 @@
+import cv2
 import numpy as np
 import cProfile
 import pstats
-import cv2
 from FilmScanner.FrameDetector import FrameDetector
+
 
 def main():
     img = cv2.imread('..\..\misc\Photo-1.jpeg',
@@ -11,6 +12,9 @@ def main():
 
     frame.determine_lines()
     frame.determine_intersections()
+    print(len(frame.intersections))
+    frame.merge_points()
+    print(len(frame.intersections))
 
     with cProfile.Profile() as pr:
         frame.determine_rectangle()
@@ -46,6 +50,10 @@ def main():
     rect_coords = rect_coords.reshape((-1, 1, 2))
     cv2.polylines(cdst, [rect_coords], True, (255, 0, 0), 5)
     print(frame.rectangle)
+
+    for i in range(0, len(frame.intersections)):
+        cv2.circle(cdst, frame.intersections[i], radius=0,
+                  color=(0, 255, 0), thickness=15)
 
     cv2.imwrite("..\..\misc\lines.png", cdst)
     print("Finished")
