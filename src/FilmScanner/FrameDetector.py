@@ -199,6 +199,11 @@ class FrameDetector:
                         out.append(rect)
         return out
 
+    @staticmethod
+    def _ideal_rectangle(point1, point2):
+        # calculates the two other points from the two given points to form a rectangle
+        ...
+
     def merge_points(self, thresh=math.pow(10, 2)):
         tree = kdtree(self.intersections, 3)
         print(tree.tree)
