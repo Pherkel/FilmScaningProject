@@ -129,10 +129,10 @@ class FrameDetector:
 
     @staticmethod
     def _aspect_ratio(rect) -> float:
-        top = FrameDetector._vec_from_points(rect[0], rect[1])
-        left = FrameDetector._vec_from_points(rect[0], rect[2])
-        bottom = FrameDetector._vec_from_points(rect[2], rect[3])
-        right = FrameDetector._vec_from_points(rect[1], rect[2])
+        top = FrameDetector._vec_from_points(rect[0], rect[2])
+        left = FrameDetector._vec_from_points(rect[0], rect[1])
+        bottom = FrameDetector._vec_from_points(rect[1], rect[3])
+        right = FrameDetector._vec_from_points(rect[2], rect[3])
 
         height = FrameDetector._vec_sq_length(right)
         length = FrameDetector._vec_sq_length(top)
@@ -141,11 +141,10 @@ class FrameDetector:
 
     @staticmethod
     def _angles(rect) -> float:
-
-        top = FrameDetector._vec_from_points(rect[0], rect[1])
-        left = FrameDetector._vec_from_points(rect[0], rect[2])
-        bottom = FrameDetector._vec_from_points(rect[2], rect[3])
-        right = FrameDetector._vec_from_points(rect[1], rect[2])
+        top = FrameDetector._vec_from_points(rect[0], rect[2])
+        left = FrameDetector._vec_from_points(rect[0], rect[1])
+        bottom = FrameDetector._vec_from_points(rect[1], rect[3])
+        right = FrameDetector._vec_from_points(rect[2], rect[3])
 
         angle1 = FrameDetector._vec_angle_fast(top, left)
         angle2 = FrameDetector._vec_angle_fast(top, right)
@@ -190,7 +189,7 @@ class FrameDetector:
 
     @staticmethod
     def _rate_rectangle(rect) -> float:
-        return FrameDetector._aspect_ratio(rect) + FrameDetector._angles(rect)
+        return abs(FrameDetector._aspect_ratio(rect) - 2.25) + FrameDetector._angles(rect)
 
     def determine_rectangle(self):
         # outline
@@ -212,7 +211,5 @@ class FrameDetector:
             if rating < best_rating:
                 best_rating = rating
                 best_rect = rect
-                print(rating)
-                self.rectangles.append(rect)
 
         self.rectangle = best_rect

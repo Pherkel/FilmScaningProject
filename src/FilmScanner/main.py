@@ -36,13 +36,12 @@ for i in range(0, len(frame.intersections)):
     cv.circle(cdst, frame.intersections[i], radius=0,
               color=(0, 255, 0), thickness=10)
 
-for rect in frame.rectangles:
-    rect_coords = np.array(rect, np.int32)
-    rect_coords = rect_coords.reshape((-1, 1, 2))
-    cv.polylines(cdst, [rect_coords], True, (255, 0, 255), 2)
 
-rect_coords = np.array(frame.rectangle, np.int32)
+plot_rect = [frame.rectangle[0], frame.rectangle[1], frame.rectangle[3], frame.rectangle[2]]
+rect_coords = np.array(plot_rect, np.int32)
 rect_coords = rect_coords.reshape((-1, 1, 2))
 cv.polylines(cdst, [rect_coords], True, (255, 255, 255), 5)
+print(frame.rectangle)
 
-cv.imwrite("..\..\lines.png", cdst)
+cv.imwrite("..\..\misc\lines.png", cdst)
+print("Finished")
