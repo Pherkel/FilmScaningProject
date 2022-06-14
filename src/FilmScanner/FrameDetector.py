@@ -1,38 +1,51 @@
-import cv2 as cv
+import cv2
 from collections import defaultdict
 import numpy as np
 import math
 
 
 class FrameDetector:
-    __slots__ = ("img", "edges", "lines", "intersections", "rectangle", "rectangles", "temp_rects")
+    __slots__ = ("img", "edges", "lines", "intersections", "rectangle")
 
     def __init__(self, image):
         self.img = image
-        self.rectangles = []
-        self.temp_rects = []
 
     def determine_lines(self):
-        self.edges = FrameDetector.detect_edges(self.img)
-        self.lines = FrameDetector.detect_lines(self.edges)
+        self.edges = FrameDetector._detect_edges(self.img)
+        self.lines = FrameDetector._detect_lines(self.edges)
 
     def determine_intersections(self):
         segmented = FrameDetector._segment_by_angle_kmeans(self.lines)
         self.intersections = FrameDetector._segmented_intersections(segmented)
 
+    def determine_rectangle(self):
+        best_rating = 10
+        best_rect = (0, 0, 0, 0)
+
+        rects = FrameDetector._form_rectangle(self.intersections)
+        for rect in rects:
+
+            rating = FrameDetector._rate_rectangle(rect)
+
+            if rating < best_rating:
+                best_rating = rating
+                best_rect = rect
+
+        self.rectangle = best_rect
+
     @staticmethod
-    def detect_edges(img) -> bool:
+    def _detect_edges(img) -> bool:
         try:
-            img = cv.GaussianBlur(img, (3, 3), 1)
-            img = cv.Canny(img, 100, 75, None, 3)
+            img = cv2.GaussianBlur(img, (3, 3), 1)
+            img = cv2.Canny(img, 100, 75, None, 3)
             return img
         except Exception as err:
             print(err)
 
     @staticmethod
-    def detect_lines(edges) -> bool:
+    def _detect_lines(edges) -> bool:
         try:
-            lines = cv.HoughLines(edges, 1, np.pi / 180, 175, 0, 0)
+            lines = cv2.HoughLines(edges, 1, np.pi / 180, 175, 0, 0)
             return lines
         except Exception as err:
             print(err)
@@ -46,9 +59,9 @@ class FrameDetector:
         """
 
         # Define criteria = (type, max_iter, epsilon)
-        default_criteria_type = cv.TERM_CRITERIA_EPS + cv.TERM_CRITERIA_MAX_ITER
+        default_criteria_type = cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER
         criteria = kwargs.get('criteria', (default_criteria_type, 10, 1.0))
-        flags = kwargs.get('flags', cv.KMEANS_RANDOM_CENTERS)
+        flags = kwargs.get('flags', cv2.KMEANS_RANDOM_CENTERS)
         attempts = kwargs.get('attempts', 10)
 
         # returns angles in [0, pi] in radians
@@ -58,7 +71,7 @@ class FrameDetector:
                         for angle in angles], dtype=np.float32)
 
         # run kmeans on the coords
-        labels, centers = cv.kmeans(
+        labels, centers = cv2.kmeans(
             pts, k, None, criteria, attempts, flags)[1:]
         labels = labels.reshape(-1)  # transpose to row vec
 
@@ -112,10 +125,9 @@ class FrameDetector:
 
     @staticmethod
     def _vec_angle_fast(vec1, vec2):
-        x = np.dot(vec1, vec2)
-        y = np.cross(vec1, vec2)
-        #vec = FrameDetector._vec_from_points(vec1, vec2)
-
+        x = (vec1[0]*vec2[0]) + (vec1[1]*vec2[1]) # dot
+        #x = np.dot(vec1, vec2)
+        y = vec1[0]*vec2[1]-vec1[1]*vec2[0] # cross product
         if y >= 0:
             return y / (x + y) if x >= 0 else 1 - x / (-x + y)
         else:
@@ -134,8 +146,8 @@ class FrameDetector:
         bottom = FrameDetector._vec_from_points(rect[1], rect[3])
         right = FrameDetector._vec_from_points(rect[2], rect[3])
 
-        height = FrameDetector._vec_sq_length(right)
-        length = FrameDetector._vec_sq_length(top)
+        height = 0.5 * (FrameDetector._vec_sq_length(right) + FrameDetector._vec_sq_length(left))
+        length = 0.5 * (FrameDetector._vec_sq_length(top) + FrameDetector._vec_sq_length(bottom))
 
         return length / height
 
@@ -191,25 +203,3 @@ class FrameDetector:
     def _rate_rectangle(rect) -> float:
         return abs(FrameDetector._aspect_ratio(rect) - 2.25) + FrameDetector._angles(rect)
 
-    def determine_rectangle(self):
-        # outline
-        # 1. pick point from intersections -> if too slow ransac
-        # 2. determine 3 other random points to form a rectangle
-        # 3. check if the selected rect has already been looked at
-        # 4. rank the rectangle by how many edgepoints are on it's perimeter
-        # 5. save the combination of points for this rectangle
-        # 6. do for all points
-
-        best_rating = 10
-        best_rect = (0, 0, 0, 0)
-
-        rects = FrameDetector._form_rectangle(self.intersections)
-        for rect in rects:
-
-            rating = FrameDetector._rate_rectangle(rect)
-
-            if rating < best_rating:
-                best_rating = rating
-                best_rect = rect
-
-        self.rectangle = best_rect
